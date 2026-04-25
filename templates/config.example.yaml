@@ -52,3 +52,25 @@ verify:
   build_command: "npm run build" # run after implementation to verify
   test_command: "npm test" # run after writing tests
   lint_command: "npm run lint" # optional
+
+# --- Story Point Scale ---
+# Used by the decomposer agent to calibrate estimates.
+# Format: "Npt = N days" — each point represents total work including
+# implementation, writing tests, manual QA, and demo prep.
+point_scale: "1pt = 1 day"
+
+# --- Push to Tracker ---
+# Field mappings for creating tickets via push-tickets.sh.
+# These vary per JIRA/ADO instance — check your project's field config.
+push:
+  default_issue_type: "Story"
+  default_priority: "Medium"
+  default_labels: []
+  field_mappings:
+    jira:
+      story_points_field: "customfield_10016" # JIRA story points custom field ID
+      # acceptance_criteria is appended to the description body
+    ado:
+      story_points_field: "Microsoft.VSTS.Scheduling.StoryPoints"
+      acceptance_criteria_field: "Microsoft.VSTS.Common.AcceptanceCriteria"
+  required_fields: [] # add any job-specific required custom fields here
