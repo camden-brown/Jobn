@@ -1,0 +1,5 @@
+# Job configurations (contains credentials and job-specific data)
+jobs/
+
+# OS files
+.DS_Store

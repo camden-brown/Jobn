@@ -1,0 +1,54 @@
+# Job Configuration
+# Copy this to jobs/<job-name>/config.yaml and fill in your values.
+# The jobs/ directory is gitignored — credentials stay local.
+
+# --- Ticket Provider ---
+# "jira" or "ado"
+provider: "jira"
+
+# --- JIRA Settings (if provider: jira) ---
+jira:
+  url: "https://yourcompany.atlassian.net"
+  email: "you@company.com"
+  token: "your-jira-api-token"
+  project: "PROJ"
+  board_id: 0 # optional, for sprint lookup
+  sprint: "" # sprint name, "current", or empty to ignore
+  status: "To Do" # board column / status to pull from (e.g. "To Do", "In Progress")
+  assignee: "you@company.com" # filter by assignee
+
+# --- Azure DevOps Settings (if provider: ado) ---
+# ado:
+#   organization: "yourorg"
+#   project: "YourProject"
+#   token: "your-ado-pat"
+#   team: "YourTeam"                       # optional
+#   iteration: "current"                   # iteration path, or "current", or empty to ignore
+#   column: "New"                           # board column / state to pull from (e.g. "New", "Active")
+#   assignee: "you@company.com"            # optional
+
+# --- Git Settings ---
+git:
+  repo_path: "/absolute/path/to/target/repo"
+  base_branch: "main" # branch to create worktrees from
+  branch_pattern: "feature/{ticket_id}" # {ticket_id} is replaced
+  worktree_dir: "./worktrees" # relative to repo_path
+
+# --- Commit Settings ---
+commit:
+  time_range_start: "2026-04-21T09:00:00"
+  time_range_end: "2026-04-25T17:00:00"
+  timezone: "America/Chicago" # timestamps use this timezone
+  working_hours_only: true # spread commits only during working hours
+  working_hour_start: 9 # 24h format
+  working_hour_end: 17
+  skip_weekends: true
+  author_name: "Your Name"
+  author_email: "you@company.com"
+  message_pattern: "[{ticket_id}] {type}: {description}"
+
+# --- Build/Test Verification ---
+verify:
+  build_command: "npm run build" # run after implementation to verify
+  test_command: "npm test" # run after writing tests
+  lint_command: "npm run lint" # optional
