@@ -1,0 +1,146 @@
+# ──────────────────────────────────────────────────
+# create-work-item.ps1
+# Create a work item in Azure DevOps
+# ──────────────────────────────────────────────────
+#
+# Prerequisites (one-time setup):
+#   1. Install Azure CLI: winget install Microsoft.AzureCLI
+#   2. Install DevOps extension: az extension add --name azure-devops
+#   3. Sign in: az login
+#
+# Usage:
+#   .\scripts\create-work-item.ps1 -JobName myjob -Title "My story"
+#   .\scripts\create-work-item.ps1 -JobName myjob -Title "Fix bug" -Type Bug -Sprint "26.2.2"
+#   .\scripts\create-work-item.ps1 -Organization "https://dev.azure.com/org" -Project "MyProject" -Team "MyTeam" -Title "My story"
+# ──────────────────────────────────────────────────
+
+param(
+    [string]$JobName,
+
+    [Parameter(Mandatory)]
+    [string]$Title,
+
+    [ValidateSet("User Story", "Bug", "Task", "Feature", "Epic")]
+    [string]$Type = "User Story",
+
+    [string]$Description,
+    [string]$AcceptanceCriteria,
+    [string]$Sprint,
+    [string]$Assignee,
+    [int]$Points,
+    [string]$Tags,
+    [int]$ParentId,
+    [ValidateSet("New", "Active", "Resolved", "Closed")]
+    [string]$State,
+    [string]$AreaPath,
+    [hashtable]$Fields = @{},
+    [string]$Organization,
+    [string]$Project,
+    [string]$Team
+)
+
+# Resolve config from job if JobName provided
+if ($JobName) {
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $configPath = Join-Path (Split-Path -Parent $scriptDir) "jobs/$JobName/config.yaml"
+    if (-not (Test-Path $configPath)) {
+        Write-Host "Job config not found: $configPath" -ForegroundColor Red
+        exit 1
+    }
+    $configText = Get-Content $configPath -Raw
+    if (-not $Organization) { $Organization = "https://dev.azure.com/" + ($configText | Select-String 'organization:\s*"?([^"\r\n]+)' | ForEach-Object { $_.Matches[0].Groups[1].Value.Trim() }) }
+    if (-not $Project)      { $Project = ($configText | Select-String 'project:\s*"?([^"\r\n]+)' | ForEach-Object { $_.Matches[0].Groups[1].Value.Trim('"', ' ') }) }
+    if (-not $Team)         { $Team = ($configText | Select-String 'team:\s*"?([^"\r\n]+)' | ForEach-Object { $_.Matches[0].Groups[1].Value.Trim('"', ' ') }) }
+}
+
+if (-not $Organization -or -not $Project -or -not $Team) {
+    Write-Host "Provide -JobName or -Organization, -Project, and -Team parameters." -ForegroundColor Red
+    exit 1
+}
+
+# Configure defaults for this session
+az devops configure --defaults organization=$Organization project=$Project
+
+# Resolve sprint name to iteration path
+$iterationPath = $null
+if ($Sprint) {
+    $iterations = az boards iteration team list --team $Team --output json | ConvertFrom-Json
+    $match = $iterations | Where-Object { $_.name -eq $Sprint } | Select-Object -First 1
+    if (-not $match) {
+        Write-Host "Sprint '$Sprint' not found. Available sprints:" -ForegroundColor Red
+        $iterations | Sort-Object { $_.attributes.startDate } | ForEach-Object {
+            $tf = $_.attributes.timeFrame
+            $color = if ($tf -eq "current") { "Green" } elseif ($tf -eq "future") { "Yellow" } else { "Gray" }
+            Write-Host "  $($_.name) ($tf)" -ForegroundColor $color
+        }
+        exit 1
+    }
+    $iterationPath = $match.path
+}
+
+# Build the base command
+$cmdArgs = @(
+    "boards", "work-item", "create"
+    "--title", $Title
+    "--type", $Type
+    "--output", "json"
+)
+
+if ($Assignee)           { $cmdArgs += "--assigned-to";    $cmdArgs += $Assignee }
+if ($Description)        { $cmdArgs += "--description";    $cmdArgs += $Description }
+if ($AreaPath)           { $cmdArgs += "--area-path";      $cmdArgs += $AreaPath }
+if ($iterationPath)      { $cmdArgs += "--iteration";      $cmdArgs += $iterationPath }
+
+# Additional fields via -f key=value
+$fieldArgs = @()
+if ($AcceptanceCriteria) { $fieldArgs += "Microsoft.VSTS.Common.AcceptanceCriteria=$AcceptanceCriteria" }
+if ($State)              { $fieldArgs += "System.State=$State" }
+if ($Tags)               { $fieldArgs += "System.Tags=$Tags" }
+
+foreach ($key in $Fields.Keys) {
+    $fieldArgs += "$key=$($Fields[$key])"
+}
+
+foreach ($f in $fieldArgs) {
+    $cmdArgs += "-f"
+    $cmdArgs += $f
+}
+
+Write-Host "Creating $Type`: $Title" -ForegroundColor Cyan
+$result = & az @cmdArgs | ConvertFrom-Json
+
+if (-not $result) {
+    Write-Host "Failed to create work item." -ForegroundColor Red
+    exit 1
+}
+
+# Story points must be set via update (create ignores numeric fields)
+if ($Points) {
+    az boards work-item update --id $result.id -f "Microsoft.VSTS.Scheduling.StoryPoints=$Points" --output none 2>$null
+}
+
+$item = [PSCustomObject]@{
+    ID       = $result.id
+    Type     = $result.fields.'System.WorkItemType'
+    Title    = $result.fields.'System.Title'
+    State    = $result.fields.'System.State'
+    Sprint   = $result.fields.'System.IterationPath'
+    Assigned = $result.fields.'System.AssignedTo'.displayName
+    Points   = $Points
+    URL      = $result._links.html.href
+}
+
+# Link to parent if specified
+if ($ParentId) {
+    Write-Host "Linking to parent work item #$ParentId..." -ForegroundColor Cyan
+    az boards work-item relation add --id $result.id --relation-type parent --target-id $ParentId --output none
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Linked to parent #$ParentId" -ForegroundColor Green
+    } else {
+        Write-Host "Warning: failed to link to parent #$ParentId" -ForegroundColor Yellow
+    }
+}
+
+Write-Host ""
+Write-Host "Created work item #$($item.ID)" -ForegroundColor Green
+$item | Format-List
