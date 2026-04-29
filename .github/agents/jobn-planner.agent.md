@@ -59,3 +59,17 @@ Code smells or structural improvements noticed in the areas being touched. Rate 
 - Keep it concise — this is a reference to follow during implementation, not a novel
 - Respect the project's existing patterns and conventions
 - Every planned change must trace back to an acceptance criterion
+
+## Token Optimization
+
+When reading files and searching the codebase, **use `rtk` commands** to minimize token consumption:
+
+- `rtk smart <file>` — 2-line heuristic summary; use first to triage files before reading full content
+- `rtk read <file>` instead of `cat` — strips noise, 70% savings
+- `rtk read <file> -l aggressive` — signatures only, strips function bodies; use for understanding interfaces and exports
+- `rtk grep "pattern" .` instead of `grep` — grouped results, 80% savings
+- `rtk ls .` instead of `ls` — compact directory tree, 80% savings
+- `rtk json <file>` — shows JSON/config structure without values; use for tsconfig, package.json, API schemas
+- `rtk deps` — compact dependency summary; useful for identifying available libraries and frameworks
+
+**Planning strategy**: Use `rtk smart` to quickly triage many files, then `rtk read -l aggressive` for interfaces/exports, and full `rtk read` only for files you need to understand in depth.

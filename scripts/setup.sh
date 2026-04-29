@@ -8,6 +8,16 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 JOB_NAME="${1:?Usage: setup.sh <job-name>}"
 JOB_DIR="${REPO_ROOT}/jobs/${JOB_NAME}"
 
+# rtk is required for token-optimized command output
+if ! command -v rtk &>/dev/null; then
+  echo "Error: rtk is required but not installed."
+  echo "  brew install rtk"
+  echo "  # or: curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
+  echo ""
+  echo "After installing, run: rtk init -g --copilot"
+  exit 1
+fi
+
 if [[ -d "$JOB_DIR" ]]; then
   echo "Job '${JOB_NAME}' already exists at ${JOB_DIR}"
   exit 1

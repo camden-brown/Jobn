@@ -38,6 +38,19 @@ Using the `repo_path` (and `git_secondary.repo_path` if applicable) from the job
 
 This analysis directly informs dependency identification and story point estimation.
 
+**Use `rtk` for all shell commands** to minimize token consumption:
+
+- `rtk ls .` — token-optimized directory tree (80% savings)
+- `rtk smart <file>` — 2-line heuristic summary per file; use this first to triage which files to read in full
+- `rtk read <file>` — smart file reading, strips noise (70% savings)
+- `rtk read <file> -l aggressive` — signatures only, strips function bodies; ideal for understanding file shape without reading implementation
+- `rtk grep "pattern" .` — grouped search results (80% savings)
+- `rtk find "*.ts" .` — compact find results (80% savings)
+- `rtk deps` — compact dependency summary from package.json/Cargo.toml/etc.; use early to understand what libraries are available
+- `rtk json <file>` — shows JSON structure without values; use for tsconfig, package.json, API schemas, .eslintrc
+
+**Scanning strategy**: Start broad with `rtk ls` + `rtk smart` to identify relevant areas, then drill into specific files with `rtk read`. Use `rtk json` for config files and `rtk deps` for the dependency tree. Only read full files when you need implementation details.
+
 ### 3. Break into Stories
 
 Decompose the feature into **standalone user stories**. Each story should be:

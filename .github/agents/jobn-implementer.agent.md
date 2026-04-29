@@ -17,6 +17,20 @@ You receive:
 - Worktree path (where you write code)
 - Verification commands (build_command, test_command, lint_command)
 
+## Token Optimization
+
+All shell commands should go through `rtk` to compress output and save tokens:
+
+- Verify commands in config are already `rtk`-prefixed — run them as-is
+- For ad-hoc commands: `rtk git status`, `rtk git diff`, `rtk ls .`, `rtk grep "pattern" .`
+- For reading files: `rtk read <file>` instead of `cat`
+- `rtk err <cmd>` — filter errors only from any command; use when a build/test partially fails and you only need the error lines
+- `rtk tsc` — TypeScript errors grouped by file; use instead of raw `tsc` for TS projects
+- `rtk summary <cmd>` — heuristic summary of long output; fallback for commands rtk doesn't have a specific filter for
+- `rtk` compresses build/test output by 60-90%, showing only failures and relevant info
+
+**When a build or test fails**: Use `rtk err <cmd>` to re-run and extract only the errors, rather than re-running the full command and reading all output again.
+
 ## Phase 1: Implement
 
 1. Follow `PLAN.md` step by step

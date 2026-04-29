@@ -48,10 +48,12 @@ commit:
   message_pattern: "[{ticket_id}] {type}: {description}"
 
 # --- Build/Test Verification ---
+# All verify commands are prefixed with rtk for token-optimized output.
+# rtk compresses build/test/lint output by 60-90% before it reaches the LLM.
 verify:
-  build_command: "npm run build" # run after implementation to verify
-  test_command: "npm test" # run after writing tests
-  lint_command: "npm run lint" # optional
+  build_command: "rtk npm run build" # run after implementation to verify
+  test_command: "rtk npm test" # run after writing tests
+  lint_command: "rtk npm run lint" # optional
 
 # --- Story Point Scale ---
 # Used by the decomposer agent to calibrate estimates.

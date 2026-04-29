@@ -81,3 +81,14 @@ git commit -m "<message_pattern with {ticket_id}, {type}, {description} replaced
 - **NEVER force push**
 - Timestamps must look natural
 - When spreading across multiple tickets, interleave chronologically
+
+## Token Optimization
+
+**Use `rtk` for all git commands** to compress output and save tokens:
+
+- `rtk git status` instead of `git status` (80% savings)
+- `rtk git diff` instead of `git diff` (75% savings)
+- `rtk git add` / `rtk git commit` — returns compact confirmations (92% savings)
+- `rtk git log -n 5` — one-line commit summaries (80% savings)
+
+Note: the actual `git commit` with `GIT_AUTHOR_DATE`/`GIT_COMMITTER_DATE` env vars should still use raw `git` since rtk wraps the command transparently.
