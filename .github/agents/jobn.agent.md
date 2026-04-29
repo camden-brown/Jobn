@@ -52,81 +52,46 @@ git worktree add -b "$BRANCH" "${WORKTREE_DIR}/${TICKET_ID}" "origin/${BASE_BRAN
 
 - Use `bugfix_branch_pattern` for bug-type tickets
 - Use `git_secondary` config when the ticket targets the secondary repo
-- Update progress to `worktree_created`
 
-### Phase 1: Groom → delegate to `jobn-groomer`
+#### Scaffold `.jobn/` context into the worktree
 
-Provide the subagent with:
+After creating the worktree, write a `.jobn/` directory into it so the new VS Code window is self-contained:
 
-- The ticket JSON content
-- The worktree path
-- The groom template from `templates/groom.md.tmpl`
+1. **`mkdir -p "${WORKTREE_DIR}/${TICKET_ID}/.jobn"`**
+2. **Copy the ticket JSON** → `.jobn/ticket.json`
+3. **Copy the groom template** → `.jobn/groom.md.tmpl` (from `templates/groom.md.tmpl`)
+4. **Generate `.jobn/INSTRUCTIONS.md`** from `templates/worktree-instructions.md.tmpl`:
+   - Replace all `{ticket_id}`, `{summary}`, `{description}`, `{issue_type}`, `{priority}` from the ticket JSON
+   - Replace `{build_command}`, `{test_command}`, `{test_quick_command}`, `{test_filtered_command}`, `{lint_command}` from the config verify section (use the area-specific commands that match the ticket's scope, or the defaults)
+   - Replace `{author_name}`, `{author_email}`, `{message_pattern}`, `{time_range_start}`, `{time_range_end}`, `{timezone}`, `{working_hours_only}`, `{working_hour_start}`, `{working_hour_end}`, `{skip_weekends}` from the config commit section
+   - Replace `{jobn_path}` with the absolute path to the Jobn workspace
+   - Replace `{job_name}` with the current job name
+   - Replace `{current_status}` with `worktree_created`
+5. **Add `.jobn/` to `.gitignore`** in the worktree (append if not already present)
 
-Expect: `GROOM.md` created in worktree root. Update progress to `groomed`.
+Then open the worktree in a **new VS Code window**:
 
-### Phase 2: Plan → delegate to `jobn-planner`
-
-Provide the subagent with:
-
-- The ticket JSON content
-- The GROOM.md content (acceptance criteria)
-- The worktree path
-
-Expect: `PLAN.md` created in worktree root. Update progress to `planned`.
-
-### Phase 3 + 4: Implement & Test → delegate to `jobn-implementer`
-
-Provide the subagent with:
-
-- The ticket JSON content
-- The PLAN.md content
-- The worktree path
-- Verification commands from config (`verify` or `verify_secondary`)
-
-Expect: Implementation complete, tests written and passing, build green. Update progress to `tested`.
-
-### Phase 5: Review → delegate to `jobn-reviewer`
-
-Provide the subagent with:
-
-- The worktree path
-- The GROOM.md acceptance criteria
-
-Expect: Review findings. If issues found, send them to `jobn-implementer` for fixes, then re-review. Update progress to `reviewed`.
-
-### Phase 6: Commit → delegate to `jobn-committer`
-
-Provide the subagent with:
-
-- The worktree path
-- The commit config from config.yaml
-- The ticket ID
-
-The committer will **ask the user** how they want to handle commits (all at once, incremental, or skip). Update progress to `committed`.
-
-### Phase 7: PR Description (you do this directly)
-
-Create `PR.md` in the worktree root:
-
-```markdown
-## Summary
-
-[One paragraph describing what this PR does, referencing the ticket]
-
-## Changes
-
-- [Bullet list of key changes]
-
-## Testing
-
-- [How it was tested, what test cases were added]
-
-## Acceptance Criteria
-
-- [Copy from GROOM.md with checkmarks]
+```bash
+code "${WORKTREE_DIR}/${TICKET_ID}"
 ```
 
-Update progress to `pr_ready`.
+**Tell the user**: "Worktree for {TICKET_ID} is ready. Open Copilot in the new window and say: _Follow .jobn/INSTRUCTIONS.md_"
+
+The orchestrator does NOT run subsequent phases itself — each worktree window drives its own pipeline. Move on to the next ticket's worktree setup.
+
+Update progress to `worktree_created`.
+
+### Phases 1–7: Driven by the worktree window
+
+The orchestrator does **not** run Phases 1–7 directly. Each worktree window follows `.jobn/INSTRUCTIONS.md` to drive its own pipeline (groom → plan → implement → test → review → commit → PR).
+
+The orchestrator's job after Phase 0 is to:
+
+1. **Set up all worktrees first** — create worktrees and scaffold `.jobn/` for every ticket, opening each in a new VS Code window
+2. **Monitor progress** — when the user asks, read `progress.json` and report which tickets are in which phase
+3. **Handle cross-ticket concerns** — if tickets have dependencies, advise on ordering
+
+When a worktree window completes all phases, it updates progress.json to `pr_ready`. The user marks `completed` after pushing.
 
 ## After All Tickets
 

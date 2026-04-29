@@ -9,9 +9,8 @@ Resume the Jobn pipeline for the job named `$input`.
 1. Read `jobs/$input/config.yaml`
 2. Read `jobs/$input/progress.json` carefully
 3. For each ticket that is NOT `completed`:
-   - Determine which phase it's in based on its status
-   - Resume from the next phase (e.g. if status is `groomed`, start from Phase 2: Plan)
-4. Continue processing through the full pipeline from that point
-5. Process remaining `not_started` tickets after finishing in-progress ones
+   - If `not_started`: create worktree, scaffold `.jobn/`, and open in a new VS Code window
+   - If `worktree_created` or any in-progress phase: check if the worktree already exists, re-scaffold `.jobn/` if missing, and open it
+4. Report which tickets are in which phase and which windows need attention
 
 Begin now.

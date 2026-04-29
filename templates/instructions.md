@@ -53,8 +53,27 @@ WORKTREE_DIR="<from config.git.worktree_dir>"
 cd "$REPO_PATH"
 git fetch origin
 git worktree add -b "$BRANCH" "${WORKTREE_DIR}/${TICKET_ID}" "origin/${BASE_BRANCH}"
-cd "${WORKTREE_DIR}/${TICKET_ID}"
 ```
+
+#### Scaffold `.jobn/` context into the worktree
+
+After creating the worktree, write a `.jobn/` directory into it so the new VS Code window is self-contained:
+
+1. `mkdir -p "${WORKTREE_DIR}/${TICKET_ID}/.jobn"`
+2. Copy the ticket JSON → `.jobn/ticket.json`
+3. Copy the groom template → `.jobn/groom.md.tmpl`
+4. Generate `.jobn/INSTRUCTIONS.md` from `templates/worktree-instructions.md.tmpl` with all placeholders replaced (ticket data, verify commands, commit config, job path/name, current status)
+5. Append `.jobn/` to `.gitignore` in the worktree (if not already present)
+
+Then open the worktree in a **new VS Code window**:
+
+```bash
+code "${WORKTREE_DIR}/${TICKET_ID}"
+```
+
+Tell the user: "Worktree for {TICKET_ID} is ready. Open Copilot in the new window and say: _Follow .jobn/INSTRUCTIONS.md_"
+
+The orchestrator sets up all worktrees first, then each worktree window drives its own pipeline independently.
 
 Update progress to `worktree_created`.
 
