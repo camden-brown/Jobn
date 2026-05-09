@@ -48,21 +48,21 @@ commit:
   message_pattern: "[{ticket_id}] {type}: {description}"
 
 # --- Build/Test Verification ---
-# All verify commands are prefixed with rtk for token-optimized output.
-# rtk compresses build/test/lint output by 60-90% before it reaches the LLM.
+# Used by @implementer for build/test/lint gates.
+# All commands are prefixed with rtk for token-optimized output (see reference/rtk-commands.md).
 verify:
   build_command: "rtk npm run build" # run after implementation to verify
   test_command: "rtk npm test" # run after writing tests
   lint_command: "rtk npm run lint" # optional
 
 # --- Story Point Scale ---
-# Used by the decomposer agent to calibrate estimates.
+# Used by @planner to calibrate story point estimates.
 # Format: "Npt = N days" — each point represents total work including
 # implementation, writing tests, manual QA, and demo prep.
 point_scale: "1pt = 1 day"
 
 # --- Push to Tracker ---
-# Field mappings for creating tickets via push-tickets.sh.
+# Field mappings used by @uploader when creating tickets via push-tickets.sh.
 # These vary per JIRA/ADO instance — check your project's field config.
 push:
   default_issue_type: "Story"

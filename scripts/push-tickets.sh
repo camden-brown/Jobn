@@ -15,7 +15,7 @@
 # PREREQUISITES
 #   - bash, curl, python3
 #   - yq (brew install yq)
-#   - A decomposition: run /decompose_feature first
+#   - A decomposition: use @planner to create one first
 #
 # OUTPUT
 #   Creates jobs/<job-name>/decompositions/<feature-slug>/pushed.json:
@@ -46,7 +46,7 @@ fi
 
 if [[ ! -f "$STORIES_FILE" ]]; then
   echo "Error: Stories file not found at ${STORIES_FILE}"
-  echo "Run /decompose_feature first."
+  echo "Use @planner to create a decomposition first."
   exit 1
 fi
 
