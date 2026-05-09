@@ -7,13 +7,16 @@
 
 ## Summary
 <!-- Rewrite the ticket in plain, non-technical language. What changes for the user? Why does it matter? -->
+<!-- Lead with the user/business value. A PM should understand the ticket's purpose from this section alone. -->
 
 {description}
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria from the user's perspective. A product owner should be able to verify each one. -->
+<!-- User stories: specific, testable criteria from the USER'S perspective. Each criterion describes user-observable behavior. -->
+<!-- ✅ Given I am logged in, when I click "Export", then a CSV file downloads -->
+<!-- ❌ Given the API receives a GET request, when it queries the database, then it returns CSV data -->
 
-- [ ] Given [precondition], when [action], then [expected result]
+- [ ] Given [precondition], when [user action], then [user-observable result]
 - [ ] TODO
 
 ## QA Test Plan
@@ -35,13 +38,3 @@
 **Negative Cases**
 1. TODO: Invalid inputs, unauthorized access, error states
 2. Expected result: TODO
-
-## Assumptions
-<!-- Anything unclear in the original ticket. Flag for PO review. -->
-
-- TODO: List any assumptions made about ambiguous requirements
-
-## Out of Scope
-<!-- Explicitly list related work this ticket does NOT cover. -->
-
-- TODO: Prevent scope creep by being explicit

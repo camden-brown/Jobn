@@ -1,0 +1,17 @@
+# Ticket CSV Template
+#
+# Compatible with both JIRA CSV Import and Azure DevOps CSV Import.
+#
+# JIRA Import: Project Settings → External System Import → CSV
+# ADO Import:  Queries → Import Work Items → CSV
+#
+# Notes:
+#   - Story Points may map to a custom field in JIRA (check config)
+#   - Acceptance Criteria is appended to Description for JIRA (no standard field)
+#   - For ADO, Acceptance Criteria maps to Microsoft.VSTS.Common.AcceptanceCriteria
+#   - Labels use semicolons as separator in the CSV
+#   - Priority values: Highest, High, Medium, Low, Lowest (JIRA) or 1-4 (ADO)
+#
+# Columns:
+Summary,Issue Type,Priority,Story Points,Labels,Description,Acceptance Criteria
+"{summary}","{issue_type}","{priority}",{story_points},"{labels}","{description}","{acceptance_criteria}"

@@ -1,0 +1,97 @@
+# Project Instructions for Copilot
+
+<!-- 
+  This file is loaded automatically by VS Code Copilot for every agent interaction.
+  Customize it with project-specific context so agents don't need to re-discover it.
+  
+  Scaffolded by Jobn install.sh — edit freely, this file is NOT a symlink.
+-->
+
+## Project Overview
+
+- **Name**: <!-- e.g., Patient Portal -->
+- **Framework**: <!-- e.g., Angular 18, Node.js 20, Python 3.12 -->
+- **Package Manager**: <!-- e.g., npm, pnpm, yarn -->
+- **Language**: <!-- e.g., TypeScript 5.4 (strict mode) -->
+- **Styling**: <!-- e.g., SCSS with Angular Material M3, BEM naming -->
+- **State Management**: <!-- e.g., Signals + RxJS, NgRx, plain services -->
+- **Testing**: <!-- e.g., Jest, Vitest, Playwright, Karma + Jasmine -->
+
+## Architecture
+
+<!-- Describe the high-level structure so agents understand where things go. -->
+
+```
+src/
+├── app/
+│   ├── core/          # Singleton services, guards, interceptors
+│   ├── shared/        # Reusable components, pipes, directives
+│   └── features/      # Feature modules (lazy-loaded)
+│       ├── dashboard/
+│       └── settings/
+├── assets/
+├── environments/
+└── styles/
+```
+
+## Key Patterns
+
+<!-- What patterns does this project follow? Agents will match these. -->
+
+- <!-- e.g., All components use OnPush change detection -->
+- <!-- e.g., Services use inject() not constructor injection -->
+- <!-- e.g., API calls go through a centralized HttpService -->
+- <!-- e.g., Forms use typed reactive forms -->
+- <!-- e.g., State is managed with signals, not BehaviorSubjects -->
+
+## Naming Conventions
+
+- <!-- e.g., Files: kebab-case (user-profile.component.ts) -->
+- <!-- e.g., Classes: PascalCase (UserProfileComponent) -->
+- <!-- e.g., Variables/functions: camelCase -->
+- <!-- e.g., Constants: UPPER_SNAKE_CASE -->
+- <!-- e.g., CSS classes: BEM (block__element--modifier) -->
+
+## Important Commands
+
+```bash
+# Build
+npm run build
+
+# Test
+npm test
+
+# Lint
+npm run lint
+
+# E2E
+npm run e2e
+
+# Start dev server
+npm start
+```
+
+## Environment & Deployment
+
+- <!-- e.g., Deployed to AWS via CDK -->
+- <!-- e.g., CI/CD: GitHub Actions / Azure Pipelines -->
+- <!-- e.g., Environments: dev, staging, prod -->
+- <!-- e.g., Feature flags via PostHog -->
+- <!-- e.g., Error monitoring via Sentry -->
+- <!-- e.g., Analytics via PostHog -->
+
+## API Patterns
+
+- <!-- e.g., REST API at /api/v1/*, OpenAPI spec in docs/api.yaml -->
+- <!-- e.g., Auth: JWT tokens via HttpOnly cookies -->
+- <!-- e.g., Pagination: cursor-based with limit/cursor params -->
+- <!-- e.g., Error responses: { error: string, code: string, details?: any } -->
+
+## Things to Know
+
+<!-- Project-specific gotchas, decisions, or constraints agents should be aware of. -->
+
+- <!-- e.g., We use a monorepo — don't modify packages outside the current workspace -->
+- <!-- e.g., The legacy module uses NgModules — don't convert unless asked -->
+- <!-- e.g., All dates are stored as UTC in the database -->
+- <!-- e.g., We support IE11 — no optional chaining in shared libs (just kidding) -->

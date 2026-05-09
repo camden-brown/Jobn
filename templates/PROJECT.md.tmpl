@@ -1,0 +1,69 @@
+# Project Context
+
+<!--
+  Project-specific context for Jobn agents. Fill this in so agents
+  (@implementer, @committer, @migrator, etc.) understand your project
+  without re-scanning every time.
+
+  Scaffolded by Jobn install.sh — edit freely, this file is NOT a symlink.
+-->
+
+## Tech Stack
+
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Frontend | <!-- e.g., Angular --> | <!-- e.g., 18.2 --> |
+| UI Library | <!-- e.g., Angular Material --> | <!-- e.g., 18.2 --> |
+| Backend | <!-- e.g., Node.js + Express --> | <!-- e.g., 20.x --> |
+| Database | <!-- e.g., DynamoDB --> | |
+| Infrastructure | <!-- e.g., AWS CDK --> | <!-- e.g., 2.x --> |
+| CI/CD | <!-- e.g., GitHub Actions --> | |
+| Monitoring | <!-- e.g., Sentry + PostHog --> | |
+
+## Repository Structure
+
+```
+<!-- Paste or describe your project's folder structure -->
+```
+
+## Key Architectural Decisions
+
+<!-- Decisions agents should respect when writing code. -->
+
+1. <!-- e.g., Single-table DynamoDB design — all entities in one table -->
+2. <!-- e.g., Feature-based folder structure, not layer-based -->
+3. <!-- e.g., Signals for new component state, RxJS for async streams only -->
+4. <!-- e.g., All API responses wrapped in { data: T, meta?: M } -->
+
+## External Integrations
+
+| Service | Purpose | SDK/Client |
+|---------|---------|-----------|
+| <!-- e.g., PostHog --> | <!-- Analytics, feature flags --> | <!-- posthog-js --> |
+| <!-- e.g., Sentry --> | <!-- Error monitoring --> | <!-- @sentry/angular --> |
+| <!-- e.g., Stripe --> | <!-- Payments --> | <!-- @stripe/stripe-js --> |
+
+## Verification Commands
+
+```bash
+# These should match your config.yaml verify section
+build: <!-- e.g., rtk npm run build -->
+test: <!-- e.g., rtk npm test -->
+lint: <!-- e.g., rtk npm run lint -->
+e2e: <!-- e.g., rtk npx playwright test -->
+```
+
+## Release Process
+
+- <!-- e.g., semantic-release on main branch -->
+- <!-- e.g., Versioning: semver via conventional commits -->
+- <!-- e.g., Changelog: auto-generated from commit messages -->
+- <!-- e.g., npm publish on release -->
+
+## Known Constraints
+
+<!-- Things that might trip up an AI agent. -->
+
+- <!-- e.g., Cannot modify the shared/ package without a separate PR -->
+- <!-- e.g., DynamoDB table schemas are defined in infra/ — don't create tables in app code -->
+- <!-- e.g., Feature flags must be added in PostHog UI before using in code -->
