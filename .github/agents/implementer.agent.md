@@ -85,7 +85,14 @@ If there's no existing plan, create a brief internal plan (you don't need to wri
 2. Write clean, idiomatic code matching the project's existing patterns
 3. Apply relevant skills — but **match the project's existing conventions first**
 4. Keep changes focused — don't introduce unrelated refactoring
-5. After implementation, run build verification:
+5. Follow clean code practices:
+   - No inline single-line comments — code should be self-explanatory; use JSDoc for public APIs instead
+   - Functions should be short (prefer under ~20 lines), do one thing, and have clear inputs/outputs
+   - Prefer pure functions with explicit parameters and return values over side effects
+   - Extract logic into well-named, encapsulated functions — avoid deep nesting and long procedural blocks
+   - No magic numbers or strings — use named constants
+   - Name variables and functions to reveal intent — if a name needs a comment, rename it
+6. After implementation, run build verification:
 
 ```bash
 cd "<project_path>"
@@ -124,6 +131,7 @@ Review all changes for:
 - [ ] Accessibility issues (if UI changes — reference `accessibility` skill)
 - [ ] All requirements from the ticket are satisfied
 - [ ] No debug code, TODOs, commented-out code, or `console.log` remains
+- [ ] Public APIs and complex logic have JSDoc documentation (reference `jsdoc` skill — skip for self-documenting code)
 - [ ] No hardcoded secrets or environment-specific values
 
 If you find issues, fix them and re-run verification.
@@ -138,6 +146,35 @@ Tell the user:
 - Any concerns or edge cases worth noting
 - **Next step**: "Use `@committer` to commit these changes when ready"
 
+
+### 8. Technical Debt & Improvement Notes
+
+While working on the ticket, note any technical debt or improvement opportunities you observe in the **touched files** (not the whole codebase). Do NOT implement these — just report them.
+
+Look for:
+
+- Code duplication that could be extracted into a shared utility
+- Overly complex functions that would benefit from decomposition
+- Missing or outdated types (e.g., `any` casts, loose interfaces)
+- Inconsistent patterns across related files
+- Missing error handling or silent failures
+- Outdated dependencies or deprecated API usage
+- Test gaps — existing logic with no test coverage
+- Performance concerns (N+1 queries, unnecessary re-renders, large bundle imports)
+
+Present these separately from the implementation report:
+
+```markdown
+## Tech Debt Observations
+
+| File | Observation | Effort | Impact |
+|------|------------|--------|--------|
+| `src/auth/token.service.ts` | Token refresh logic duplicated in 3 places — extract to shared method | Small | High |
+| `src/models/user.ts` | Uses `any` for preferences field — should be a typed interface | Small | Medium |
+| `src/api/orders.handler.ts` | No error handling on DynamoDB call — silent failure on write | Small | High |
+```
+
+**These are suggestions only.** The user decides whether to address them now, create tickets for later, or ignore them.
 ## Constraints
 
 - **NEVER commit code** — that's the `@committer` agent's job
