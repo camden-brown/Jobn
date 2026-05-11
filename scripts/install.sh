@@ -70,8 +70,8 @@ if $UNINSTALL; then
     fi
   done
 
-  # Remove per-item symlinks from skills and hooks
-  for dst_dir in "$SKILLS_DST" "$HOOKS_DST"; do
+  # Remove per-item symlinks from skills
+  for dst_dir in "$SKILLS_DST"; do
     if [[ -L "$dst_dir" ]]; then
       # Old-style whole-directory symlink
       rm "$dst_dir"
@@ -95,6 +95,22 @@ if $UNINSTALL; then
       fi
     fi
   done
+
+  # Remove Jobn-managed hook copies (identified by Jobn path in content)
+  if [[ -d "$HOOKS_DST" ]]; then
+    for item in "$HOOKS_DST"/*; do
+      [[ -f "$item" ]] || continue
+      if grep -q "${JOBN_DIR}" "$item" 2>/dev/null; then
+        rm "$item"
+        echo "  Removed Jobn hook: $(basename "$item") from hooks/"
+        ((removed++))
+      fi
+    done
+    if [[ -d "$HOOKS_DST" ]] && [[ -z "$(ls -A "$HOOKS_DST")" ]]; then
+      rmdir "$HOOKS_DST"
+      echo "  Removed empty directory: $HOOKS_DST"
+    fi
+  fi
 
   if [[ $removed -eq 0 ]]; then
     echo "  Nothing to remove."
@@ -202,9 +218,33 @@ link_items() {
 link_dir "$AGENTS_SRC" "$AGENTS_DST" "agents"
 link_items "$SKILLS_SRC" "$SKILLS_DST" "skills"
 
-# Hooks — per-item so they merge with rtk or other tools
+# Hooks — copy files (not symlinks) so we can rewrite relative paths.
+# Replaces ./scripts/ with the absolute Jobn path. Preserves project-local hooks.
 if [[ -d "$HOOKS_SRC" ]]; then
-  link_items "$HOOKS_SRC" "$HOOKS_DST" "hooks"
+  if [[ -L "$HOOKS_DST" ]]; then
+    rm "$HOOKS_DST"
+    echo "  Converted hooks from directory symlink to per-item copies"
+  fi
+  mkdir -p "$HOOKS_DST"
+
+  hooks_copied=0
+  hooks_skipped=0
+  for item in "$HOOKS_SRC"/*; do
+    [[ -f "$item" ]] || continue
+    name="$(basename "$item")"
+    dst_item="${HOOKS_DST}/${name}"
+
+    # Skip project-local hooks that don't reference Jobn
+    if [[ -f "$dst_item" ]] && ! grep -q "${JOBN_DIR}" "$dst_item" 2>/dev/null && ! grep -q './scripts/' "$dst_item" 2>/dev/null; then
+      ((hooks_skipped++))
+      continue
+    fi
+
+    # Copy and rewrite relative script paths to absolute
+    sed "s|\./scripts/|${JOBN_DIR}/scripts/|g" "$item" > "$dst_item"
+    ((hooks_copied++))
+  done
+  echo "  Copied ${hooks_copied} hooks (${hooks_skipped} project-local hooks preserved)"
 fi
 
 # Prompts — whole-directory symlink
