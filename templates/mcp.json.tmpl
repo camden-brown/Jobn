@@ -1,0 +1,114 @@
+{
+  // MCP Server Configuration for Debugging
+  // Copy this to your project's .vscode/mcp.json and update values.
+  //
+  // Prerequisites:
+  //   pip install uvx   (or use npx equivalents)
+  //   AWS CLI configured with the correct profile: aws configure --profile <profile>
+  //   Sentry auth token: Settings > API > Auth Tokens (scopes: org:read, project:read, event:read)
+  //
+  // Official AWS MCP servers: https://github.com/awslabs/mcp
+  // Official Sentry MCP server: https://github.com/getsentry/sentry-mcp
+
+  "servers": {
+
+    // Sentry — fetch issues, events, stack traces, breadcrumbs
+    "sentry": {
+      "command": "npx",
+      "args": ["@sentry/mcp-server@latest"],
+      "env": {
+        "SENTRY_ACCESS_TOKEN": "${input:sentryToken}"
+      }
+    },
+
+    // CloudWatch Logs — search and read log groups/streams
+    "aws-cloudwatch": {
+      "command": "uvx",
+      "args": ["awslabs.cloudwatch-logs-mcp-server"],
+      "env": {
+        "AWS_PROFILE": "${input:awsProfile}",
+        "AWS_REGION": "${input:awsRegion}",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    },
+
+    // DynamoDB — describe tables, query, scan, get items (read-only by default)
+    "aws-dynamodb": {
+      "command": "uvx",
+      "args": ["awslabs.dynamodb-mcp-server"],
+      "env": {
+        "AWS_PROFILE": "${input:awsProfile}",
+        "AWS_REGION": "${input:awsRegion}",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    },
+
+    // Core AWS — STS, IAM lookups, general account info
+    "aws-core": {
+      "command": "uvx",
+      "args": ["awslabs.core-mcp-server"],
+      "env": {
+        "AWS_PROFILE": "${input:awsProfile}",
+        "AWS_REGION": "${input:awsRegion}",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    }
+
+    // ── Optional servers ──────────────────────────────────────
+    // Uncomment as needed for your project.
+
+    // // S3 — list/read objects (useful for checking uploaded files)
+    // "aws-s3": {
+    //   "command": "uvx",
+    //   "args": ["awslabs.s3-mcp-server"],
+    //   "env": {
+    //     "AWS_PROFILE": "${input:awsProfile}",
+    //     "AWS_REGION": "${input:awsRegion}",
+    //     "FASTMCP_LOG_LEVEL": "ERROR"
+    //   }
+    // },
+
+    // // Lambda — invoke, read config, check recent invocations
+    // "aws-lambda": {
+    //   "command": "uvx",
+    //   "args": ["awslabs.lambda-mcp-server"],
+    //   "env": {
+    //     "AWS_PROFILE": "${input:awsProfile}",
+    //     "AWS_REGION": "${input:awsRegion}",
+    //     "FASTMCP_LOG_LEVEL": "ERROR"
+    //   }
+    // },
+
+    // // SQS — check queue depth, read DLQ messages
+    // "aws-sqs": {
+    //   "command": "uvx",
+    //   "args": ["awslabs.sqs-mcp-server"],
+    //   "env": {
+    //     "AWS_PROFILE": "${input:awsProfile}",
+    //     "AWS_REGION": "${input:awsRegion}",
+    //     "FASTMCP_LOG_LEVEL": "ERROR"
+    //   }
+    // }
+  },
+
+  "inputs": [
+    {
+      "id": "sentryToken",
+      "type": "promptString",
+      "description": "Sentry User Auth Token (Settings > API > Auth Tokens)",
+      "password": true
+    },
+    {
+      "id": "awsProfile",
+      "type": "promptString",
+      "description": "AWS CLI profile name (from ~/.aws/credentials)",
+      "default": "default"
+    },
+    {
+      "id": "awsRegion",
+      "type": "promptString",
+      "description": "AWS region (e.g. us-east-1)",
+      "default": "us-east-1"
+    }
+  ]
+}
