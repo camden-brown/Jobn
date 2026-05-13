@@ -1,4 +1,4 @@
-# ──────────────────────────────────────────────────
+﻿# ──────────────────────────────────────────────────
 # create-work-item.ps1
 # Create a work item in Azure DevOps
 # ──────────────────────────────────────────────────
@@ -36,10 +36,12 @@ param(
     [hashtable]$Fields = @{},
     [string]$Organization,
     [string]$Project,
-    [string]$Team
+    [string]$Team,
+    [string]$Token
 )
 
 # Resolve config from job if JobName provided
+$configText = $null
 if ($JobName) {
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
     $configPath = Join-Path (Split-Path -Parent $scriptDir) "jobs/$JobName/config.yaml"
@@ -51,6 +53,10 @@ if ($JobName) {
     if (-not $Organization) { $Organization = "https://dev.azure.com/" + ($configText | Select-String 'organization:\s*"?([^"\r\n]+)' | ForEach-Object { $_.Matches[0].Groups[1].Value.Trim() }) }
     if (-not $Project)      { $Project = ($configText | Select-String 'project:\s*"?([^"\r\n]+)' | ForEach-Object { $_.Matches[0].Groups[1].Value.Trim('"', ' ') }) }
     if (-not $Team)         { $Team = ($configText | Select-String 'team:\s*"?([^"\r\n]+)' | ForEach-Object { $_.Matches[0].Groups[1].Value.Trim('"', ' ') }) }
+    if (-not $Token) {
+        $tokenMatch = $configText | Select-String 'token:\s*"?([^"\r\n]+)'
+        if ($tokenMatch) { $Token = $tokenMatch.Matches[0].Groups[1].Value.Trim('"', ' ') }
+    }
 }
 
 if (-not $Organization -or -not $Project -or -not $Team) {
@@ -78,7 +84,7 @@ if ($Sprint) {
     $iterationPath = $match.path
 }
 
-# Build the base command
+# Build the base CLI command (plain-text fields only)
 $cmdArgs = @(
     "boards", "work-item", "create"
     "--title", $Title
@@ -87,15 +93,12 @@ $cmdArgs = @(
 )
 
 if ($Assignee)           { $cmdArgs += "--assigned-to";    $cmdArgs += $Assignee }
-if ($Description)        { $cmdArgs += "--description";    $cmdArgs += $Description }
 if ($AreaPath)           { $cmdArgs += "--area-path";      $cmdArgs += $AreaPath }
 if ($iterationPath)      { $cmdArgs += "--iteration";      $cmdArgs += $iterationPath }
 
-# Additional fields via -f key=value
+# Plain-text fields via -f (State is safe; HTML fields use REST API below)
 $fieldArgs = @()
-if ($AcceptanceCriteria) { $fieldArgs += "Microsoft.VSTS.Common.AcceptanceCriteria=$AcceptanceCriteria" }
 if ($State)              { $fieldArgs += "System.State=$State" }
-if ($Tags)               { $fieldArgs += "System.Tags=$Tags" }
 
 foreach ($key in $Fields.Keys) {
     $fieldArgs += "$key=$($Fields[$key])"
@@ -117,6 +120,48 @@ if (-not $result) {
 # Story points must be set via update (create ignores numeric fields)
 if ($Points) {
     az boards work-item update --id $result.id -f "Microsoft.VSTS.Scheduling.StoryPoints=$Points" --output none 2>$null
+}
+
+# ──────────────────────────────────────────────────
+# Set HTML / rich fields via REST API.
+# The az CLI -f flag silently drops HTML content (angle brackets are
+# swallowed by the argument parser). The REST API with JSON Patch
+# handles HTML fields correctly.
+# ──────────────────────────────────────────────────
+$patchOps = @()
+if ($Description)        { $patchOps += @{ op = "add"; path = "/fields/System.Description"; value = $Description } }
+if ($AcceptanceCriteria) { $patchOps += @{ op = "add"; path = "/fields/Microsoft.VSTS.Common.AcceptanceCriteria"; value = $AcceptanceCriteria } }
+if ($Tags)               { $patchOps += @{ op = "add"; path = "/fields/System.Tags"; value = $Tags } }
+
+if ($patchOps.Count -gt 0) {
+    if ($Token) {
+        $patchHeaders = @{
+            "Content-Type"  = "application/json-patch+json"
+            "Authorization" = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$Token"))
+        }
+        $patchBody = $patchOps | ConvertTo-Json -Depth 3
+        # Wrap single-op array (ConvertTo-Json unwraps arrays of length 1)
+        if ($patchOps.Count -eq 1) { $patchBody = "[$patchBody]" }
+        $patchUri = "$Organization/$([uri]::EscapeDataString($Project))/_apis/wit/workitems/$($result.id)?api-version=7.1"
+        try {
+            $null = Invoke-RestMethod -Uri $patchUri -Method Patch -Headers $patchHeaders -Body ([System.Text.Encoding]::UTF8.GetBytes($patchBody))
+            Write-Host "Set rich fields (Description, AC, Tags) via REST API" -ForegroundColor Green
+        } catch {
+            Write-Host "Warning: REST API patch failed: $($_.Exception.Message)" -ForegroundColor Yellow
+            Write-Host "  HTML fields (AcceptanceCriteria, Description) may be empty." -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "Warning: no PAT token available — falling back to CLI for rich fields." -ForegroundColor Yellow
+        Write-Host "  HTML content in AcceptanceCriteria / Description may be silently dropped." -ForegroundColor Yellow
+        # Best-effort fallback via CLI update
+        $fallbackArgs = @()
+        if ($Description)        { $fallbackArgs += "System.Description=$Description" }
+        if ($AcceptanceCriteria) { $fallbackArgs += "Microsoft.VSTS.Common.AcceptanceCriteria=$AcceptanceCriteria" }
+        if ($Tags)               { $fallbackArgs += "System.Tags=$Tags" }
+        foreach ($fb in $fallbackArgs) {
+            az boards work-item update --id $result.id -f $fb --output none 2>$null
+        }
+    }
 }
 
 $item = [PSCustomObject]@{

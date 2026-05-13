@@ -1,4 +1,4 @@
----
+﻿---
 description: 'Upload tickets from a CSV, JSON, or document to JIRA or Azure DevOps. Use when: creating tickets in a tracker, pushing decomposed stories, importing a CSV of work items.'
 tools: [read, execute]
 ---
@@ -83,13 +83,34 @@ For dry-run:
 
 #### ADO
 
-For ADO tickets, use the PowerShell script:
+Use the `create-work-item.ps1` script for each ticket:
 
 ```powershell
-.\scripts\create-work-item.ps1 -JobName {job_name} -Title "{summary}" -Type "{type}" -Description "{description}" -Points {points}
+.\scripts\create-work-item.ps1 -JobName {job_name} -Title "{summary}" -Type "{type}" -Description "{description}" -AcceptanceCriteria "{ac_html}" -Points {points} -Tags "{tags}" -ParentId {parent_id}
 ```
 
-Or construct `az boards work-item create` commands directly per `reference/ado-fields.md`.
+The script handles the full workflow automatically:
+1. Creates the work item via `az boards` CLI (plain-text fields)
+2. Sets story points via CLI update (create ignores numeric fields)
+3. Sets HTML fields (Description, AcceptanceCriteria, Tags) via **REST API** using the PAT token from config
+4. Links to parent work item if `-ParentId` is provided
+
+**Important — HTML fields and the CLI:**
+- The `az boards` CLI **silently drops HTML content** passed via `-f` flags (angle brackets are swallowed)
+- The script reads the PAT token from `config.yaml` and uses the ADO REST API (`PATCH` with `application/json-patch+json`) for these fields
+- If constructing API calls directly (without the script), always use the REST API for `AcceptanceCriteria` and `Description`
+
+**If building AC HTML from structured data:**
+
+```powershell
+# Given/When/Then format
+$acLines = foreach ($ac in $story.acceptance_criteria) {
+    "<li><b>Given</b> $($ac.given), <b>when</b> $($ac.when), <b>then</b> $($ac.then)</li>"
+}
+$acHtml = "<ul>" + ($acLines -join "") + "</ul>"
+```
+
+**Encoding:** Always use `[System.Text.Encoding]::UTF8.GetBytes($body)` when calling `Invoke-RestMethod` to preserve special characters (em dashes, smart quotes, etc.).
 
 ### 5. Report Results
 
@@ -123,3 +144,4 @@ If yes:
 - **NEVER store or log credentials** — read from config only
 - **Dry-run first if unsure** — when the user seems uncertain, default to dry-run
 - **Idempotent awareness** — warn the user if tickets with similar summaries already exist (if detectable)
+- **REST API for HTML fields** — never rely on `az boards` CLI `-f` for AcceptanceCriteria or Description with HTML
