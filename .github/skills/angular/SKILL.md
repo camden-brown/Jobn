@@ -138,44 +138,78 @@ Available color roles: `primary`, `on-primary`, `primary-container`, `on-primary
 
 Override Material component styles **correctly** — most LLM-generated overrides are wrong. Follow this priority order:
 
-#### 1. Theme Configuration (Preferred)
+#### 1. Component Override Mixins (Preferred for M3)
 
-Use theme config and `@include` to override component styles globally:
+Angular Material M3 (v19+) provides `mat.<component>-overrides()` mixins for token-based customization. These are the primary way to override component styles:
+
+```scss
+@use '@angular/material' as mat;
+@use './palette' as *;
+
+// Override component tokens globally inside a mixin
+@mixin material-overrides {
+  @include mat.button-overrides((
+    filled-container-color: $color-blue-700,
+    filled-label-text-color: $color-white,
+    filled-disabled-container-color: $color-grey-200,
+    filled-disabled-label-text-color: $color-grey-500,
+  ));
+  @include mat.icon-button-overrides((
+    disabled-icon-color: $color-grey-400,
+  ));
+  @include mat.form-field-overrides((
+    error-text-color: $color-red-600,
+    outlined-error-outline-color: $color-red-600,
+  ));
+  @include mat.card-overrides((
+    outlined-container-color: $color-white,
+    outlined-outline-color: $color-grey-200,
+  ));
+}
+```
+
+Apply the mixin in the global `html` selector:
+
+```scss
+html {
+  @include mat.theme($my-theme);
+  @include material-overrides;
+}
+```
+
+#### 2. CSS Custom Properties via MDC Tokens (For Targeted/Scoped Overrides)
+
+When you need to override a specific instance rather than all instances, use MDC CSS custom properties on a scoped class:
+
+```scss
+// Scoped override — only icon buttons with this class get primary color
+.mat-mdc-icon-button.icon-button-primary:not(:disabled) {
+  --mdc-icon-button-icon-color: #{$color-blue-700};
+  color: #{$color-blue-700}; // needed when inside form-field suffix
+}
+```
+
+**Important M3 caveats:**
+- The `color` input (`color="primary"`) is **removed in Angular Material M3** (v19+). It no longer adds `.mat-primary` or sets color tokens.
+- Form field suffixes (`matIconSuffix`) inherit `color` from `--mat-form-field-trailing-icon-color`. To override an icon button inside a suffix, you must set both `--mdc-icon-button-icon-color` AND `color` explicitly.
+- Always test disabled vs enabled states separately — disabled tokens are different from active tokens.
+
+#### 3. Theme Configuration (Legacy/Simple)
+
+Use `mat.theme()` or individual component theme mixins:
 
 ```scss
 @use '@angular/material' as mat;
 
-// Override specific component themes
 @include mat.button-theme($my-theme);
 @include mat.form-field-theme($my-theme);
 ```
 
-#### 2. CSS Custom Properties (For Targeted Overrides)
+#### 3. Inline CSS Custom Properties (For One-Off Element Overrides)
 
-Angular Material exposes CSS custom properties for many components. Use these for targeted overrides:
+For individual element overrides in templates or component styles:
 
 ```scss
-// Override via custom properties — no specificity issues
-mat-toolbar {
-  --mat-toolbar-container-background-color: var(--color-surface);
-  --mat-toolbar-container-text-color: var(--color-on-surface);
-}
-
-mat-sidenav {
-  --mat-sidenav-container-background-color: var(--color-surface);
-}
-
-.mat-mdc-tab-group {
-  --mat-tab-header-active-label-text-color: mat.get-theme-color(
-    $my-theme,
-    primary
-  );
-  --mat-tab-header-active-focus-indicator-color: mat.get-theme-color(
-    $my-theme,
-    primary
-  );
-}
-
 .mat-mdc-form-field {
   --mat-form-field-container-text-size: 0.875rem;
 }
@@ -185,7 +219,7 @@ mat-sidenav {
 }
 ```
 
-#### 3. Component-Scoped `::ng-deep` (Last Resort)
+#### 4. Component-Scoped `::ng-deep` (Last Resort)
 
 `::ng-deep` pierces Angular's view encapsulation. Use **only** when CSS custom properties and theme config don't cover your case:
 
